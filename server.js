@@ -6,14 +6,14 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import axios from 'axios';
 import multer from 'multer';
 import FormData from 'form-data';
 import { generateEmbedScript } from './src/utils/embedScript.js';
 import { MockChatService } from './dist/mockChatService.js';
 
-dotenv.config();
+// dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
