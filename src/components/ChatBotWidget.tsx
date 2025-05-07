@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as ScrollArea from '@radix-ui/react-scroll-area';
 import { MessageSquare, X, Send } from 'lucide-react';
-import { cn } from '../utils';
+import { cn } from '@/utils';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Calendar } from './ui/calendar';
@@ -10,7 +10,6 @@ import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { PhoneInput } from './ui/phone-input';
-import { ChatWindowTheme } from '../features/bubble/types'; 
 
 export interface ChatMessage {
   type: 'system' | 'user';
@@ -155,7 +154,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     observersConfig,
   } = props;
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -186,7 +185,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
 
   useEffect(() => {
     if (isOpen) {
-      startWorkflow();
+      (async () => await startWorkflow())()
     }
   }, [isOpen]);
 

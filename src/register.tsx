@@ -1,6 +1,8 @@
 import { defaultBotProps } from './constants';
 import { Full } from './features/full';
 import { Bubble } from './features/bubble';
+import { createRoot } from 'react-dom/client';
+
 
 class TiktikFullChatbot extends HTMLElement {
   connectedCallback() {
@@ -10,14 +12,15 @@ class TiktikFullChatbot extends HTMLElement {
     const props = { ...defaultBotProps, ...this.getProps() };
     const element = document.createElement('div');
     root.appendChild(element);
-    
+
+    const root1 = createRoot(root); // createRoot(container!) if you use TypeScript
     // @ts-ignore
-    window.ReactDOM.render(<Full {...props} />, element);
+    root1.render(<Full {...props} />);
   }
 
   disconnectedCallback() {
     // @ts-ignore
-    window.ReactDOM.unmountComponentAtNode(this.shadowRoot?.firstChild);
+    root1.unmountComponentAtNode(this.shadowRoot?.firstChild);
   }
 
   getProps() {
@@ -35,14 +38,15 @@ class TiktikChatbot extends HTMLElement {
     const props = { ...defaultBotProps, ...this.getProps() };
     const element = document.createElement('div');
     root.appendChild(element);
-    
+
+    const root1 = createRoot(root); // createRoot(container!) if you use TypeScript
     // @ts-ignore
-    window.ReactDOM.render(<Bubble {...props} />, element);
+    root1.render(<Bubble {...props} />);
   }
 
   disconnectedCallback() {
     // @ts-ignore
-    window.ReactDOM.unmountComponentAtNode(this.shadowRoot?.firstChild);
+    root1.unmountComponentAtNode(this.shadowRoot?.firstChild);
   }
 
   getProps() {

@@ -1,21 +1,22 @@
 export function generateEmbedScript(serverUrl) {
     const scriptPopup = `
-<script type="module">
-    import ChatBotWidget from '${serverUrl}/web.js'
-    ChatBotWidget.init({
-        chatflowid: 'your-identifier-here',
-        apiHost: '${serverUrl}'
-    })
-  </script>`;
+    <script type="module">
+        import ChatBotWidget from '${serverUrl}/web.js'
+        ChatBotWidget.init({
+            chatflowid: 'your-identifier-here',
+            apiHost: '${serverUrl}'
+        })
+    </script>`;
   
-    const scriptFull = `<tiktik-fullchatbot></tiktik-fullchatbot>
-<script type="module">
-    import ChatBotWidget from '${serverUrl}/web.js'
-    ChatBotWidget.initFull({
-        chatflowid: 'your-identifier-here',
-        apiHost: '${serverUrl}'
-    })
-  </script>`;
+    const scriptFull = `
+    <tiktik-fullchatbot></tiktik-fullchatbot>
+    <script type="module">
+        import ChatBotWidget from '${serverUrl}/web.js'
+        ChatBotWidget.initFull({
+            chatflowid: 'your-identifier-here',
+            apiHost: '${serverUrl}'
+        })
+    </script>`;
   
     const envContext = serverUrl.includes('localhost') ? 'Development' : 'Production';
   

@@ -11,6 +11,8 @@ import commonjs from '@rollup/plugin-commonjs';
 import { uglify } from 'rollup-plugin-uglify';
 import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
+import replace from "@rollup/plugin-replace";
+import inject from "@rollup/plugin-inject";
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -59,8 +61,15 @@ const indexConfig = {
           livereload({ watch: 'dist' }),
         ]
       : []),
+    replace({
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+      preventAssignment: true
+    }),
+    inject({
+      ReactDOM: 'react-dom'
+    })
   ],
-  external: ['react', 'react-dom'],
+  external: [],
   output: {
     globals: {
       react: 'React',

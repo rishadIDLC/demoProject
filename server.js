@@ -46,7 +46,7 @@ app.use(
     origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
-    allowedHeaders: ['*'],
+    allowedHeaders: ['http://localhost:3001', 'http://localhost:8080'],
   }),
 );
 
