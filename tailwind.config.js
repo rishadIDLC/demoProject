@@ -27,7 +27,10 @@ function rem2px(input, fontSize = 16) {
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    content: ['./src/**/*.{js,jsx,ts,tsx}'],
+    content: [
+        './index.html',
+        './src/**/*.{js,jsx,ts,tsx}', 
+    ],
     theme: {
         ...rem2px(defaultTheme),
         extend: {
@@ -47,6 +50,7 @@ module.exports = {
         }
     },
     plugins: [
-      require('@tailwindcss/typography')
+      require('@tailwindcss/typography'),
+      require("tailwindcss-animate")
     ]
 }

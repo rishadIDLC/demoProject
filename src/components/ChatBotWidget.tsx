@@ -437,7 +437,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     }
   };
 
-  return (
+  return ( 
     <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
       <Dialog.Trigger asChild>
         <button

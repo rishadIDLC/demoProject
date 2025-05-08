@@ -70,7 +70,7 @@ export const Bubble: React.FC<BubbleProps> = (props) => {
         tooltipFontSize={props.theme?.tooltip?.tooltipFontSize}
       />
       <BubbleButton
-        isBotDisplayed={isBotOpened}
+        isBotDisplayed={true}
         {...props.theme?.button}
         toggleBot={toggleBot}
         isBotOpened={isBotOpened}
