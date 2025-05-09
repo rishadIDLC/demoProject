@@ -22,7 +22,7 @@ export class MockChatService {
     const chatToken = `token_${Date.now()}`;
 
     const initialNode: NodeResponse = {
-      type: 'TEXT_MESSAGE',
+      type: 'MENU_INPUT_OPTION',
       nodeId: currentNodeId,
       data: {},
       message: 'Welcome to the chat! How can I help you today?'
