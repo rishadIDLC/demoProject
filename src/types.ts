@@ -97,7 +97,7 @@ export interface BaseNodeData extends Record<string, unknown> {
 
 export interface ChatBotConfig {
   apiUrl: string;
-  workflowId: string;
+  workflowid: string;
   sessionId: string;
   currentNodeId: string;
   token: string;

@@ -43,14 +43,16 @@
 </head>
 <body>
 <!--<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>-->
-<script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <tiktok-chatbot></tiktok-chatbot>
     <script type="module">
         console.log("ChatBotWidget")
         import ChatBotWidget from 'http://localhost:3001/web.js'
         console.log('Imported ChatBotWidget:', ChatBotWidget);
         ChatBotWidget.init({
-            chatflowid: '19d0c4cf-0259-4059-b2c3-a1a36907f502',
-            apiHost: 'http://localhost:3001'
+            chatflowid: 'chatflow1',
+            workflowid: 'chatflow1',
+            apiUrl: 'http://localhost:3001'
         })
         console.log('init called');
     </script>

@@ -34,8 +34,8 @@ class TiktikChatbot extends HTMLElement {
   connectedCallback() {
     const root = document.createElement('div');
     this.attachShadow({ mode: 'open' }).appendChild(root);
-    
     const props = { ...defaultBotProps, ...this.getProps() };
+    console.log("Reg Props", this.getProps());
     const element = document.createElement('div');
     root.appendChild(element);
 
@@ -50,6 +50,7 @@ class TiktikChatbot extends HTMLElement {
   }
 
   getProps() {
+    console.log(Object.keys(this.attributes));
     return Object.fromEntries(
       Array.from(this.attributes).map(attr => [attr.name, attr.value])
     );

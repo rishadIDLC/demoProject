@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 //import styles from '../../../assets/index.css';
 
 import { BubbleButton } from './BubbleButton';
-  import { ChatBotWidgetProps } from '../../../components/ChatBotWidget';
+  import { ChatBotWidgetProps } from '@/components/ChatBotWidget';
 import Tooltip from '../Tooltip';
 import { getBubbleButtonSize } from '../../../utils/index';
-import { ChatBotWidget } from '../../../components/ChatBotWidget';
+import { ChatBotWidget } from '@/components/ChatBotWidget';
 import { BubbleParams } from '../types';
 
 const defaultButtonColor = '#3B81F6';
@@ -37,6 +37,7 @@ export const Bubble: React.FC<BubbleProps> = (props) => {
   useEffect(() => {
     return () => {
       setIsBotStarted(false);
+      console.log("PROPS", props);
     };
   }, []);
 
@@ -58,7 +59,7 @@ export const Bubble: React.FC<BubbleProps> = (props) => {
 
   return (
     <>
-        <div>hello start here................</div>
+        <div>hello start here................ {JSON.stringify(props)}</div>
       {props.theme?.customCSS && <style>{props.theme.customCSS}</style>}
       {/* <style>{styles}</style> */}
       <Tooltip
@@ -120,7 +121,7 @@ export const Bubble: React.FC<BubbleProps> = (props) => {
             )}
             <ChatBotWidget
               apiUrl={props.apiUrl}
-              workflowId={props.workflowId}
+              workflowid={props.workflowid}
               sessionId={props.sessionId}
               currentNodeId={props.currentNodeId}
               token={props.token}

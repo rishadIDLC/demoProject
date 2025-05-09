@@ -10,7 +10,7 @@ export class MockChatService {
     currentNode: NodeResponse;
   }> = new Map();
 
-  startChat(workflowId: string, sessionId: string, currentNodeId: string, token: string): Promise<{
+  startChat(workflowid: string, sessionId: string, currentNodeId: string, token: string): Promise<{
     chatSessionId: string;
     chatToken: string;
     message: string;
@@ -41,7 +41,7 @@ export class MockChatService {
   }
 
   continueChat(
-    workflowId: string,
+    workflowid: string,
     sessionId: string,
     currentNodeId: string,
     token: string,

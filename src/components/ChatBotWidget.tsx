@@ -43,7 +43,7 @@ export type observersConfigType = Record<'observeUserInput' | 'observeLoading' |
 
 export type ChatBotWidgetProps = {
   apiUrl: string;
-  workflowId: string;
+  workflowid: string;
   sessionId: string;
   currentNodeId: string;
   token: string;
@@ -144,7 +144,7 @@ const defaultConfig: Required<ChatBotWidgetProps>['config'] = {
 export const ChatBotWidget = (props: ChatBotWidgetProps) => {
   const {
     apiUrl,
-    workflowId,
+    workflowid,
     sessionId,
     currentNodeId,
     token,
@@ -191,13 +191,14 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
 
   const startWorkflow = async () => {
     try {
-      const response = await fetch(`${apiUrl}/api/v1/start-chat/${workflowId}`, {
+      console.log('Starting Workflow', workflowid);
+      const response = await fetch(`${apiUrl}/api/v1/start-chat/${workflowid}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          workflowId,
+          workflowid,
           sessionId,
           currentNodeId,
           token,
@@ -257,14 +258,14 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     }]);
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/continue-chat/${workflowId}`, {  
+      const response = await fetch(`${apiUrl}/api/v1/continue-chat/${workflowid}`, {  
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${chatToken}`  
         },
         body: JSON.stringify({  
-          workflowId,
+          workflowid,
           sessionId,
           currentNodeId,
           token,
@@ -558,7 +559,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
               style={{ color: mergedConfig.footer?.textColor }}
             >
               {mergedConfig.footer?.text}{' '}
-              <a 
+              <a
                 href={mergedConfig.footer?.companyLink}
                 target="_blank"
                 rel="noopener noreferrer"

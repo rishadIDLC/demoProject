@@ -17,7 +17,13 @@ export const initFull = (props: ChatBotWidgetProps & { id?: string }) => {
 export const init = (props: ChatBotWidgetProps) => {
   destroy();
   const element = document.createElement('tiktik-chatbot');
-  Object.assign(element, props);
+  // Set each prop as an HTML attribute
+  Object.entries(props).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      element.setAttribute(key, String(value));
+    }
+  });
+  console.log('props', props);
   document.body.appendChild(element);
   elementUsed = element;
 };

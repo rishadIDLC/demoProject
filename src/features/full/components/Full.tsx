@@ -61,7 +61,7 @@ export const Full = (props: FullProps) => {
         >
           <ChatBotWidget
             apiUrl={props.apiUrl}
-            workflowId={props.workflowId}
+            workflowid={props.workflowid}
             sessionId={props.sessionId}
             currentNodeId={props.currentNodeId}
             token={props.token}

@@ -128,6 +128,7 @@ const handleProxy = async (req, res, targetPath) => {
       
       if (targetPath === '/api/v1/start-chat') {
         const { sessionId, currentNodeId, token } = req.body;
+
         const result = await mockService.startChat(identifier, sessionId, currentNodeId, token);
         return res.json(result);
       }
@@ -173,6 +174,7 @@ const handleProxy = async (req, res, targetPath) => {
 
 Object.values(proxyEndpoints).forEach(({ method, path, target }) => {
   app[method.toLowerCase()](path, (req, res) => {
+    console.log(`${method} ${path}`);
     return handleProxy(req, res, target);
   });
 });
