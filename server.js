@@ -124,14 +124,14 @@ const handleProxy = async (req, res, targetPath) => {
 
     // Use mock service if enabled
     if (USE_MOCK) {
-      
+
       if (targetPath === '/api/v1/start-chat') {
         const { sessionId, currentNodeId, token } = req.body;
 
         const result = await mockChatService.startChat(identifier, sessionId, currentNodeId, token);
         return res.json(result);
       }
-      
+
       if (targetPath === '/api/v1/continue-chat') {
         const { sessionId, currentNodeId, token, chatSessionId, chatToken, userInput } = req.body;
         const result = await mockChatService.continueChat(
@@ -168,7 +168,7 @@ const handleProxy = async (req, res, targetPath) => {
   } catch (error) {
     console.error('Proxy error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
-  }   
+  }
 };
 
 Object.values(proxyEndpoints).forEach(({ method, path, target }) => {

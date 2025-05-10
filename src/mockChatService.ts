@@ -225,7 +225,6 @@ export class MockChatService {
       content: userInput,
       timestamp: new Date()
     });
-    console.log('response', response);
 
     return Promise.resolve(response);
   }
