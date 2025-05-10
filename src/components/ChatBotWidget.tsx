@@ -1,14 +1,13 @@
-import React, {useState, useEffect} from 'react';
-import * as Dialog from '@radix-ui/react-dialog';
-import * as ScrollArea from '@radix-ui/react-scroll-area';
-import {MessageSquare, X, Send} from 'lucide-react';
-import {Input} from './ui/input';
-import {Button} from './ui/button';
-import {Calendar} from './ui/calendar';
-import {format} from 'date-fns';
-import {CalendarIcon} from 'lucide-react';
-import {Popover, PopoverContent, PopoverTrigger} from './ui/popover';
-import {PhoneInput} from './ui/phone-input';
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, Send, Download } from 'lucide-react';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Calendar } from './ui/calendar';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { PhoneInput } from './ui/phone-input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 export interface ChatMessage {
     type: 'system' | 'user';
@@ -152,7 +151,6 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
         observersConfig,
     } = props;
 
-    const [isOpen, setIsOpen] = useState(true);
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -160,15 +158,19 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     const [currentNode, setCurrentNode] = useState<NodeResponse | null>(null);
     const [date, setDate] = useState<Date>();
     const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [selectedButtons, setSelectedButtons] = useState<ButtonOption[]>([]);
+    const [selectedDropdown, setSelectedDropdown] = useState('');
     const [chatSessionId, setChatSessionId] = useState('');
     const [chatToken, setChatToken] = useState('');
+    const [currentPage, setCurrentPage] = useState('chat');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const mergedConfig = {...defaultConfig, ...config};
+    const mergedConfig = { ...defaultConfig, ...config };
 
     useEffect(() => {
         if (observersConfig) {
-            const {observeUserInput, observeLoading, observeMessages} = observersConfig;
+            const { observeUserInput, observeLoading, observeMessages } = observersConfig;
             if (typeof observeUserInput === 'function') {
                 observeUserInput(input);
             }
@@ -182,12 +184,29 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     }, [input, isLoading, messages, observersConfig]);
 
     useEffect(() => {
-        if (isOpen) {
-            (async () => await startWorkflow())();
+        (async () => await startWorkflow())();
+    }, []);
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
+
+    const validateInput = (type: string, value: string) => {
+        switch (type) {
+            case 'NUMBER':
+                return /^\d+$/.test(value);
+            case 'EMAIL':
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+            case 'PHONE':
+                return /^\+\d{1,3}\d{10}$/.test(value);
+            case 'TEXT_MESSAGE':
+                return value.trim() !== '';
+            default:
+                return true;
         }
-    }, [isOpen]);
+    };
 
     const startWorkflow = async () => {
+        setIsLoading(true);
         try {
             console.log('Starting Workflow', workflowid);
             const response = await fetch(`${apiUrl}/api/v1/start-chat/${workflowid}`, {
@@ -206,11 +225,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
             const data = await response.json();
 
             if (data.error) {
-                setMessages(prev => [...prev, {
-                    type: 'system',
-                    content: `Error: ${data.error}`,
-                    timestamp: new Date()
-                }]);
+                setError(data.error);
                 return;
             }
 
@@ -224,33 +239,80 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
             }]);
         } catch (error) {
             console.error('Error starting workflow:', error);
-            setMessages(prev => [...prev, {
-                type: 'system',
-                content: 'Error starting workflow. Please try again.',
-                timestamp: new Date()
-            }]);
+            setError('Error starting workflow. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleSend = async () => {
-        if (!input.trim() && !date && !phone && selectedButtons.length === 0) return;
-
         let userInput = '';
-        if (currentNode?.type === 'MENU_DATE_OPTION' && date) {
-            userInput = format(date, 'PPP');
-        } else if (currentNode?.type === 'MENU_PHONE_OPTION' && phone) {
-            userInput = phone;
-        } else if (currentNode?.type === 'BUTTONS_NODE' && selectedButtons.length > 0) {
-            userInput = selectedButtons.map(btn => btn.label).join(', ');
-        } else if (currentNode?.type === 'MENU_INPUT_OPTION') {
-            userInput = input;
+        let isValid = true;
+
+        switch (currentNode?.type) {
+            case 'TEXT_MESSAGE':
+            case 'NUMBER':
+            case 'LABEL':
+                if (!validateInput(currentNode.type, input)) {
+                    isValid = false;
+                    setError('Invalid input. Please check your entry.');
+                    return;
+                }
+                userInput = input;
+                break;
+            case 'DATE':
+                if (!date) {
+                    isValid = false;
+                    setError('Please select a date.');
+                    return;
+                }
+                userInput = format(date, 'MM-dd-yyyy');
+                break;
+            case 'PHONE':
+                if (!validateInput('PHONE', phone)) {
+                    isValid = false;
+                    setError('Please enter a valid phone number with country code.');
+                    return;
+                }
+                userInput = phone;
+                break;
+            case 'EMAIL':
+                if (!validateInput('EMAIL', email)) {
+                    isValid = false;
+                    setError('Please enter a valid email address.');
+                    return;
+                }
+                userInput = email;
+                break;
+            case 'DROPDOWN':
+                if (!selectedDropdown) {
+                    isValid = false;
+                    setError('Please select an option.');
+                    return;
+                }
+                userInput = selectedDropdown;
+                break;
+            case 'BUTTON_LIST':
+                if (selectedButtons.length === 0) {
+                    isValid = false;
+                    setError('Please select at least one button.');
+                    return;
+                }
+                userInput = selectedButtons.map(btn => btn.label).join(', ');
+                break;
+            default:
+                if (!input.trim()) return;
+                userInput = input;
         }
+
+        if (!isValid) return;
 
         setMessages(prev => [...prev, {
             type: 'user',
             content: userInput,
             timestamp: new Date()
         }]);
+        setIsLoading(true);
 
         try {
             const response = await fetch(`${apiUrl}/api/v1/continue-chat/${workflowid}`, {
@@ -272,11 +334,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
 
             const data = await response.json();
             if (data.error) {
-                setMessages(prev => [...prev, {
-                    type: 'system',
-                    content: `Error: ${data.error}`,
-                    timestamp: new Date()
-                }]);
+                setError(data.error);
                 return;
             }
 
@@ -290,14 +348,14 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
             setInput('');
             setDate(undefined);
             setPhone('');
+            setEmail('');
             setSelectedButtons([]);
+            setSelectedDropdown('');
         } catch (error) {
             console.error('Error processing workflow:', error);
-            setMessages(prev => [...prev, {
-                type: 'system',
-                content: 'Error processing workflow. Please try again.',
-                timestamp: new Date()
-            }]);
+            setError('Error processing workflow. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -316,30 +374,63 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
         if (!currentNode) return null;
 
         switch (currentNode.type) {
-            case 'MENU_INPUT_OPTION':
+            case 'TEXT_MESSAGE':
+            case 'NUMBER':
                 return (
-                    <div style={{display: 'flex', gap: '8px'}}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                         <Input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Type your message..."
+                            placeholder={currentNode.type === 'NUMBER' ? 'Enter a number...' : 'Type your message...'}
+                            type={currentNode.type === 'NUMBER' ? 'number' : 'text'}
+                            onKeyDown={async (e) => {
+                                if (e.key === 'Enter') {
+                                    await handleSend();
+                                }
+                            }}
+                            style={{ borderRadius: '4px', padding: '8px' }}
                         />
-                        <Button onClick={handleSend} size="icon">
-                            <Send style={{width: '16px', height: '16px'}}/>
+                        <Button onClick={handleSend} size="icon" style={{ borderRadius: '4px', backgroundColor: '#3B81F6' }}>
+                            <Send style={{ width: '16px', height: '16px' }} />
                         </Button>
                     </div>
                 );
 
-            case 'TEXT_MESSAGE':
+            case 'LABEL':
                 return (
-                    <div style={{fontSize: '14px', color: '#6b7280'}}>
-                        {currentNode.message}
+                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                        <Input
+                            value={currentNode.message}
+                            readOnly
+                            style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed', borderRadius: '4px', padding: '8px' }}
+                        />
                     </div>
                 );
 
-            case 'MENU_DATE_OPTION':
+            case 'DROPDOWN':
                 return (
-                    <div style={{display: 'flex', gap: '8px'}}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <Select onValueChange={setSelectedDropdown} value={selectedDropdown}>
+                            <SelectTrigger style={{ width: '100%', borderRadius: '4px', padding: '8px' }}>
+                                <SelectValue placeholder="Select an option..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {currentNode.data?.options?.map((option: string) => (
+                                    <SelectItem key={option} value={option}>
+                                        {option}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button onClick={handleSend} size="icon" style={{ borderRadius: '4px', backgroundColor: '#3B81F6' }}>
+                            <Send style={{ width: '16px', height: '16px' }} />
+                        </Button>
+                    </div>
+                );
+
+            case 'DATE':
+                return (
+                    <div style={{ display: 'flex', gap: '8px' }}>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -352,14 +443,14 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                         color: date ? 'inherit' : '#6b7280',
                                         border: '1px solid #d1d5db',
                                         padding: '8px 12px',
-                                        borderRadius: '6px'
+                                        borderRadius: '4px'
                                     }}
                                 >
-                                    <CalendarIcon style={{marginRight: '8px', width: '16px', height: '16px'}}/>
+                                    <CalendarIcon style={{ marginRight: '8px', width: '16px', height: '16px' }} />
                                     {date ? format(date, 'PPP') : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent style={{width: 'auto', padding: '0'}}>
+                            <PopoverContent style={{ width: 'auto', padding: '0' }}>
                                 <Calendar
                                     mode="single"
                                     selected={date}
@@ -368,31 +459,54 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                 />
                             </PopoverContent>
                         </Popover>
-                        <Button onClick={handleSend} size="icon">
-                            <Send style={{width: '16px', height: '16px'}}/>
+                        <Button onClick={handleSend} size="icon" style={{ borderRadius: '4px', backgroundColor: '#3B81F6' }}>
+                            <Send style={{ width: '16px', height: '16px' }} />
                         </Button>
                     </div>
                 );
 
-            case 'MENU_PHONE_OPTION':
+            case 'PHONE':
                 return (
-                    <div style={{display: 'flex', gap: '8px'}}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                         <PhoneInput
                             value={phone}
                             onChange={setPhone}
-                            placeholder="Enter phone number"
+                            placeholder="Enter phone number (+1234567890)"
+                            className={`border-4 padding-8`}
+
                         />
-                        <Button onClick={handleSend} size="icon">
-                            <Send style={{width: '16px', height: '16px'}}/>
+                        <Button onClick={handleSend} size="icon" style={{ borderRadius: '4px', backgroundColor: '#3B81F6' }}>
+                            <Send style={{ width: '16px', height: '16px' }} />
                         </Button>
                     </div>
                 );
 
-            case 'BUTTONS_NODE':
+            case 'EMAIL':
+                return (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <Input
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Enter email address..."
+                            type="email"
+                            onKeyDown={async (e) => {
+                                if (e.key === 'Enter') {
+                                    await handleSend();
+                                }
+                            }}
+                            style={{ borderRadius: '4px', padding: '8px' }}
+                        />
+                        <Button onClick={handleSend} size="icon" style={{ borderRadius: '4px', backgroundColor: '#3B81F6' }}>
+                            <Send style={{ width: '16px', height: '16px' }} />
+                        </Button>
+                    </div>
+                );
+
+            case 'BUTTON_LIST':
                 const buttonList = currentNode.data?.buttonlist || [];
                 return (
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                        <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px'}}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                             {buttonList.map((button: ButtonOption) => (
                                 <Button
                                     key={button.id}
@@ -401,7 +515,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                         width: '100%',
                                         border: selectedButtons.some(btn => btn.id === button.id) ? '2px solid #3b82f6' : 'none',
                                         padding: '8px 16px',
-                                        borderRadius: '6px'
+                                        borderRadius: '4px'
                                     }}
                                     onClick={() => handleButtonSelect(button)}
                                 >
@@ -415,7 +529,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                             style={{
                                 width: '100%',
                                 padding: '8px 16px',
-                                borderRadius: '6px',
+                                borderRadius: '4px',
                                 backgroundColor: selectedButtons.length === 0 ? '#d1d5db' : '#3b82f6',
                                 color: '#ffffff'
                             }}
@@ -425,9 +539,91 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                     </div>
                 );
 
+            case 'IMAGE':
+                return (
+                    <div style={{ maxWidth: '100%' }}>
+                        <img
+                            src={currentNode.url}
+                            alt={currentNode.alt || 'Image'}
+                            style={{
+                                width: currentNode.width || '100%',
+                                height: currentNode.height || 'auto',
+                                borderRadius: '4px'
+                            }}
+                        />
+                        {currentNode.caption && (
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
+                                {currentNode.caption}
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'VIDEO':
+                return (
+                    <div style={{ maxWidth: '100%' }}>
+                        <video
+                            controls
+                            src={currentNode.url}
+                            style={{
+                                width: currentNode.width || '100%',
+                                height: currentNode.height || 'auto',
+                                borderRadius: '4px'
+                            }}
+                        />
+                        {currentNode.caption && (
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
+                                {currentNode.caption}
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'AUDIO':
+                return (
+                    <div style={{ maxWidth: '100%' }}>
+                        <audio
+                            controls
+                            src={currentNode.url}
+                            style={{ width: '100%' }}
+                        />
+                        {currentNode.caption && (
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>
+                                {currentNode.caption}
+                            </div>
+                        )}
+                    </div>
+                );
+
+            case 'FILE':
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Button
+                            asChild
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '4px'
+                            }}
+                        >
+                            <a href={currentNode.url} download>
+                                <Download style={{ width: '16px', height: '16px' }} />
+                                Download File
+                            </a>
+                        </Button>
+                        {currentNode.caption && (
+                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                {currentNode.caption}
+                            </div>
+                        )}
+                    </div>
+                );
+
             default:
                 return (
-                    <div style={{display: 'flex', gap: '8px'}}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                         <Input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
@@ -437,104 +633,40 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                     await handleSend();
                                 }
                             }}
+                            style={{ borderRadius: '4px', padding: '8px' }}
                         />
-                        <Button onClick={handleSend} size="icon">
-                            <Send style={{width: '16px', height: '16px'}}/>
+                        <Button onClick={handleSend} size="icon" style={{ borderRadius: '4px', backgroundColor: '#3B81F6' }}>
+                            <Send style={{ width: '16px', height: '16px' }} />
                         </Button>
                     </div>
                 );
         }
     };
 
-    return (
-        <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-            <Dialog.Trigger asChild>
-                <button
-                    className={className}
-                    style={{
-                        position: 'fixed',
-                        bottom: '16px',
-                        right: '16px',
-                        padding: '12px',
-                        borderRadius: '9999px',
-                        backgroundColor: '#2563eb',
-                        color: '#ffffff',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        transition: 'background-color 0.2s',
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                >
-                    <MessageSquare style={{width: '24px', height: '24px'}}/>
-                </button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-                <Dialog.Overlay style={{position: 'fixed', inset: '0', backgroundColor: 'rgba(0, 0, 0, 0.5)'}}/>
-                <Dialog.Content
-                    style={{
-                        position: 'fixed',
-                        bottom: '16px',
-                        right: '16px',
-                        backgroundColor: mergedConfig.backgroundColor,
-                        borderRadius: '8px',
-                        boxShadow: '0 10px 15px rgba(0, 0, 0, 0.1)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        width: mergedConfig.width,
-                        height: mergedConfig.height,
-                        backgroundImage: mergedConfig.backgroundImage ? `url(${mergedConfig.backgroundImage})` : 'none',
-                        fontSize: mergedConfig.fontSize
-                    }}
-                >
-                    <div
-                        style={{
-                            padding: '16px',
-                            borderBottom: '1px solid #d1d5db',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            backgroundColor: mergedConfig.titleBackgroundColor
-                        }}
-                    >
-                        <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-                            {mergedConfig.titleAvatarSrc && (
-                                <img
-                                    src={mergedConfig.titleAvatarSrc}
-                                    alt="Chat Avatar"
-                                    style={{width: '24px', height: '24px', borderRadius: '9999px'}}
-                                />
-                            )}
-                            <Dialog.Title
-                                style={{
-                                    fontSize: '18px',
-                                    fontWeight: '600',
-                                    color: mergedConfig.titleTextColor
-                                }}
-                            >
-                                {mergedConfig.title}
-                            </Dialog.Title>
-                        </div>
-                        <Dialog.Close
+    const renderPageContent = () => {
+        switch (currentPage) {
+
+            case 'chat':
+            default:
+                return (
+                    <>
+                        <div
                             style={{
-                                padding: '4px',
-                                borderRadius: '9999px',
-                                transition: 'background-color 0.2s'
+                                flex: '1',
+                                overflowY: 'auto',
+                                padding: '16px',
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: '#888 #f1f1f1',
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            className="custom-scrollbar"
                         >
-                            <X style={{width: '20px', height: '20px'}}/>
-                        </Dialog.Close>
-                    </div>
-                    <ScrollArea.Root style={{flex: '1'}}>
-                        <ScrollArea.Viewport style={{height: '100%', padding: '16px'}}>
                             <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
                                 {messages.map((message, index) => (
                                     <div
                                         key={index}
                                         style={{
                                             padding: '12px',
-                                            borderRadius: '8px',
+                                            borderRadius: '4px',
                                             maxWidth: '80%',
                                             display: 'flex',
                                             gap: '8px',
@@ -575,7 +707,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                     <div
                                         style={{
                                             padding: '12px',
-                                            borderRadius: '8px',
+                                            borderRadius: '4px',
                                             maxWidth: '80%',
                                             backgroundColor: mergedConfig.botMessage?.backgroundColor || '#f7f8ff',
                                             color: mergedConfig.botMessage?.textColor || '#303235'
@@ -588,7 +720,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                     <div
                                         style={{
                                             padding: '12px',
-                                            borderRadius: '8px',
+                                            borderRadius: '4px',
                                             maxWidth: '80%',
                                             backgroundColor: '#fee2e2',
                                             color: '#b91c1c'
@@ -597,40 +729,87 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
                                         {error}
                                     </div>
                                 )}
+                                <div ref={messagesEndRef}/>
                             </div>
-                        </ScrollArea.Viewport>
-                        <ScrollArea.Scrollbar orientation="vertical">
-                            <ScrollArea.Thumb/>
-                        </ScrollArea.Scrollbar>
-                    </ScrollArea.Root>
-                    <div style={{padding: '16px', borderTop: '1px solid #d1d5db'}}>
-                        {renderInputField()}
-                    </div>
-                    {mergedConfig.footer?.text && (
-                        <div
-                            style={{
-                                padding: '8px',
-                                textAlign: 'center',
-                                fontSize: '14px',
-                                borderTop: '1px solid #d1d5db',
-                                color: mergedConfig.footer?.textColor
-                            }}
-                        >
-                            {mergedConfig.footer?.text}{' '}
-                            <a
-                                href={mergedConfig.footer?.companyLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{fontWeight: '600', textDecoration: 'none'}}
-                                onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
-                                onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
-                            >
-                                {mergedConfig.footer?.company}
-                            </a>
                         </div>
-                    )}
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+                        <div style={{ padding: '16px', borderTop: '1px solid #d1d5db' }}>
+                            {renderInputField()}
+                        </div>
+                    </>
+                );
+        }
+    };
+
+    return (
+        <div
+            style={{
+                backgroundColor: mergedConfig.backgroundColor,
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                maxWidth: mergedConfig.width,
+                height: mergedConfig.height,
+                backgroundImage: mergedConfig.backgroundImage ? `url(${mergedConfig.backgroundImage})` : 'none',
+                fontSize: mergedConfig.fontSize,
+                position: 'relative',
+                margin: '0 auto'
+            }}
+        >
+            {/* Navigation Menu */}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: '24px',
+                    padding: '16px',
+                    borderBottom: '1px solid #d1d5db',
+                    backgroundColor: '#f7f8ff'
+                }}
+            >
+                <button
+                    onClick={() => setCurrentPage('chat')}
+                    style={{
+                        fontSize: '16px',
+                        color: currentPage === 'chat' ? '#3B81F6' : '#6b7280',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textTransform: 'capitalize'
+                    }}
+                >
+                    Chat
+                </button>
+            </div>
+
+            {/* Main Content */}
+            {renderPageContent()}
+
+
+            {mergedConfig.footer?.text && (
+                <div
+                    style={{
+                        padding: '8px',
+                        textAlign: 'center',
+                        fontSize: '14px',
+                        borderTop: '1px solid #d1d5db',
+                        color: mergedConfig.footer?.textColor
+                    }}
+                >
+                    {mergedConfig.footer?.text}{' '}
+                    <a
+                        href={mergedConfig.footer?.companyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ fontWeight: '600', textDecoration: 'none' }}
+                        onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                        onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
+                        {mergedConfig.footer?.company}
+                    </a>
+                </div>
+            )}
+        </div>
     );
 };

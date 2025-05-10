@@ -59,7 +59,7 @@
 
       return (
         <>
-            {/*<div>hello start here................ {JSON.stringify(props)}</div>*/}
+
           {props.theme?.customCSS && <style>{props.theme.customCSS}</style>}
           {/* <style>{styles}</style> */}
           <Tooltip
