@@ -50,14 +50,15 @@ export class MockChatService {
     userInput: string
   ): Promise<NodeResponse> {
     const session = this.chatSessions.get(chatSessionId);
-    
-    if (!session) {
-      throw new Error('Chat session not found');
-    }
 
+    if (!session) {
+      // throw new Error('Chat session not found');
+      throw new Error(`Chat session not found for chatSessionId: ${chatSessionId}`);
+    }
+    console.log("hjello1",userInput);
     // Mock different types of responses based on user input
     let response: NodeResponse;
-    
+    console.log("hjello",userInput);
     if(userInput.toLowerCase().includes('text')) {
       response = {
         type: 'TEXT_MESSAGE',

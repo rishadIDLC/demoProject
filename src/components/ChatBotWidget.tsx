@@ -40,7 +40,6 @@ export interface ButtonOption {
 type observerConfigType = (accessor: string | boolean | object | ChatMessage[]) => void;
 export type observersConfigType = Record<'observeUserInput' | 'observeLoading' | 'observeMessages', observerConfigType>;
 
-
 export type ChatBotWidgetProps = {
   apiUrl: string;
   workflowid: string;
@@ -234,7 +233,6 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     }
   };
 
-
   const handleSend = async () => {
     if (!input.trim() && !date && !phone && selectedButtons.length === 0) return;
 
@@ -248,7 +246,7 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     } else if (currentNode?.type === 'MENU_INPUT_OPTION') {
       userInput = input;
     } else if (currentNode?.type === 'TEXT_MESSAGE') {
-      //userInput = currentNode.message;
+      userInput = currentNode.message;
     }
 
     setMessages(prev => [...prev, {
@@ -258,13 +256,13 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     }]);
 
     try {
-      const response = await fetch(`${apiUrl}/api/v1/continue-chat/${workflowid}`, {  
+      const response = await fetch(`${apiUrl}/api/v1/continue-chat/${workflowid}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${chatToken}`  
+          'Authorization': `Bearer ${chatToken}`
         },
-        body: JSON.stringify({  
+        body: JSON.stringify({
           workflowid,
           sessionId,
           currentNodeId,
@@ -321,256 +319,271 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
     if (!currentNode) return null;
 
     switch (currentNode.type) {
-      case 'MENU_INPUT_OPTION':   
-
+      case 'MENU_INPUT_OPTION':
         return (
-          <div className="flex gap-2">
-            <Input 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-            />
-            <Button onClick={handleSend} size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+            <div className="flex gap-2">
+              <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your message..."
+              />
+              <Button onClick={handleSend} size="icon">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
         );
 
       case 'TEXT_MESSAGE':
         return (
-          <div className="text-sm text-gray-500">
-            {currentNode.message}
-          </div>
+            <div className="text-sm text-gray-500">
+              {/*{currentNode.message}*/}
+              <div className="flex gap-2">
+                <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Type your response..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSend();
+                      }
+                    }}
+                />
+                <Button onClick={handleSend} size="icon">
+                  <Send className="h-4 w-4"/>
+                </Button>
+              </div>
+            </div>
         );
 
       case 'MENU_DATE_OPTION':
         return (
-          <div className="flex gap-2">
-            <Popover> 
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <Button onClick={handleSend} size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                      variant="outline"
+                      className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !date && 'text-muted-foreground'
+                      )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button onClick={handleSend} size="icon">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
         );
 
       case 'MENU_PHONE_OPTION':
         return (
-          <div className="flex gap-2">
-            <PhoneInput
-              value={phone}
-              onChange={setPhone}
-              placeholder="Enter phone number"
-            />
-            <Button onClick={handleSend} size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+            <div className="flex gap-2">
+              <PhoneInput
+                  value={phone}
+                  onChange={setPhone}
+                  placeholder="Enter phone number"
+              />
+              <Button onClick={handleSend} size="icon">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
         );
 
       case 'BUTTONS_NODE':
         const buttonList = currentNode.data?.buttonlist || [];
         return (
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-2">
-              {buttonList.map((button: ButtonOption) => (
-                <Button
-                  key={button.id}
-                  variant={button.variant as any}
-                  className={cn(
-                    'w-full',
-                    selectedButtons.some(btn => btn.id === button.id) && 'ring-2 ring-primary'
-                  )}
-                  onClick={() => handleButtonSelect(button)}
-                >
-                  {button.label}
-                </Button>
-              ))}
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-2">
+                {buttonList.map((button: ButtonOption) => (
+                    <Button
+                        key={button.id}
+                        variant={button.variant as any}
+                        className={cn(
+                            'w-full',
+                            selectedButtons.some(btn => btn.id === button.id) && 'ring-2 ring-primary'
+                        )}
+                        onClick={() => handleButtonSelect(button)}
+                    >
+                      {button.label}
+                    </Button>
+                ))}
+              </div>
+              <Button
+                  onClick={handleSend}
+                  disabled={selectedButtons.length === 0}
+                  className="w-full"
+              >
+                Send Selection
+              </Button>
             </div>
-            <Button 
-              onClick={handleSend} 
-              disabled={selectedButtons.length === 0}
-              className="w-full"
-            >
-              Send Selection
-            </Button>
-          </div>
         );
 
       default:
         return (
-          <div className="flex gap-2">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your response..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSend();
-                }
-              }}
-            />
-            <Button onClick={handleSend} size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+            <div className="flex gap-2">
+              <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your response..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSend();
+                    }
+                  }}
+              />
+              <Button onClick={handleSend} size="icon">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
         );
     }
   };
 
-  return ( 
-    <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-      <Dialog.Trigger asChild>
-        <button
-          className={cn(
-            'fixed bottom-4 right-4 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors',
-            className
-          )}
-        >
-          <MessageSquare className="w-6 h-6" />
-        </button>
-      </Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-        <Dialog.Content 
-          className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl flex flex-col"
-          style={{ 
-            width: mergedConfig.width,
-            height: mergedConfig.height,
-            backgroundColor: mergedConfig.backgroundColor,
-            backgroundImage: mergedConfig.backgroundImage ? `url(${mergedConfig.backgroundImage})` : 'none',
-            fontSize: mergedConfig.fontSize
-          }}
-        >
-          <div 
-            className="p-4 border-b flex justify-between items-center"
-            style={{ backgroundColor: mergedConfig.titleBackgroundColor }}
-          >
-            <div className="flex items-center gap-2">
-              {mergedConfig.titleAvatarSrc && (
-                <img 
-                  src={mergedConfig.titleAvatarSrc} 
-                  alt="Chat Avatar" 
-                  className="w-6 h-6 rounded-full"
-                />
+  return (
+      <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog.Trigger asChild>
+          <button
+              className={cn(
+                  'fixed bottom-4 right-4 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors',
+                  className
               )}
-              <Dialog.Title 
-                className="text-lg font-semibold"
-                style={{ color: mergedConfig.titleTextColor }}
-              >
-                {mergedConfig.title}
-              </Dialog.Title>
-            </div>
-            <Dialog.Close className="p-1 hover:bg-gray-100 rounded-full">
-              <X className="w-5 h-5" />
-            </Dialog.Close>
-          </div>
-          <ScrollArea.Root className="flex-1">
-            <ScrollArea.Viewport className="h-full p-4">
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      'p-3 rounded-lg max-w-[80%] flex gap-2',
-                      message.type === 'user' ? 'ml-auto' : ''
-                    )}
-                    style={{
-                      backgroundColor: message.type === 'user' 
-                        ? mergedConfig.userMessage?.backgroundColor || '#3B81F6'
-                        : mergedConfig.botMessage?.backgroundColor || '#f7f8ff',
-                      color: message.type === 'user' 
-                        ? mergedConfig.userMessage?.textColor || '#ffffff'
-                        : mergedConfig.botMessage?.textColor || '#303235',
-                    }}
-                  >
-                    {message.type === 'system' && mergedConfig.botMessage?.showAvatar && (
-                      <img 
-                        src={mergedConfig.botMessage?.avatarSrc || 'https://raw.githubusercontent.com/zahidkhawaja/langchain-chat-nextjs/main/public/parroticon.png'} 
-                        alt="Bot Avatar" 
-                        className="w-6 h-6 rounded-full"
-                      />
-                    )}
-                    <div>
-                      {message.content}
-                      {message.timestamp && (
-                        <div className="text-xs opacity-70 mt-1">
-                          {message.timestamp.toLocaleTimeString()}
-                        </div>
-                      )}
-                    </div>
-                    {message.type === 'user' && mergedConfig.userMessage?.showAvatar && (
-                      <img 
-                        src={mergedConfig.userMessage?.avatarSrc || 'https://raw.githubusercontent.com/zahidkhawaja/langchain-chat-nextjs/main/public/usericon.png'} 
-                        alt="User Avatar" 
-                        className="w-6 h-6 rounded-full"
-                      />
-                    )}
-                  </div>
-                ))}
-                {isLoading && (
-                  <div
-                    className="p-3 rounded-lg max-w-[80%]"
-                    style={{
-                      backgroundColor: mergedConfig.botMessage?.backgroundColor || '#f7f8ff',
-                      color: mergedConfig.botMessage?.textColor || '#303235',
-                    }}
-                  >
-                    Thinking...
-                  </div>
-                )}
-                {error && (
-                  <div className="p-3 rounded-lg max-w-[80%] bg-red-100 text-red-700">
-                    {error}
-                  </div>
-                )}
-              </div>
-            </ScrollArea.Viewport>
-            <ScrollArea.Scrollbar orientation="vertical">
-              <ScrollArea.Thumb />
-            </ScrollArea.Scrollbar>
-          </ScrollArea.Root>
-          <div className="p-4 border-t">
-            {renderInputField()}
-          </div>
-          {mergedConfig.footer?.text && (
-            <div 
-              className="p-2 text-center text-sm border-t"
-              style={{ color: mergedConfig.footer?.textColor }}
+          >
+            {/*<MessageSquare className="w-6 h-6" />*/}
+          </button>
+        </Dialog.Trigger>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+          <Dialog.Content
+              className="fixed bottom-4 right-4 bg-white rounded-lg shadow-xl flex flex-col"
+              style={{
+                width: mergedConfig.width,
+                height: mergedConfig.height,
+                backgroundColor: mergedConfig.backgroundColor,
+                backgroundImage: mergedConfig.backgroundImage ? `url(${mergedConfig.backgroundImage})` : 'none',
+                fontSize: mergedConfig.fontSize
+              }}
+          >
+            <div
+                className="p-4 border-b flex justify-between items-center"
+                style={{ backgroundColor: mergedConfig.titleBackgroundColor }}
             >
-              {mergedConfig.footer?.text}{' '}
-              <a
-                href={mergedConfig.footer?.companyLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold hover:underline"
-              >
-                {mergedConfig.footer?.company}
-              </a>
+              <div className="flex items-center gap-2">
+                {mergedConfig.titleAvatarSrc && (
+                    <img
+                        src={mergedConfig.titleAvatarSrc}
+                        alt="Chat Avatar"
+                        className="w-6 h-6 rounded-full"
+                    />
+                )}
+                <Dialog.Title
+                    className="text-lg font-semibold"
+                    style={{ color: mergedConfig.titleTextColor }}
+                >
+                  {mergedConfig.title}
+                </Dialog.Title>
+              </div>
+              <Dialog.Close className="p-1 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5" />
+              </Dialog.Close>
             </div>
-          )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+            <ScrollArea.Root className="flex-1 overflow-hidden">
+              <ScrollArea.Viewport className="h-full p-4">
+                <div className="space-y-4">
+                  {messages.map((message, index) => (
+                      <div
+                          key={index}
+                          className={cn(
+                              'p-3 rounded-lg max-w-[80%] flex gap-2',
+                              message.type === 'user' ? 'ml-auto' : ''
+                          )}
+                          style={{
+                            backgroundColor: message.type === 'user'
+                                ? mergedConfig.userMessage?.backgroundColor || '#3B81F6'
+                                : mergedConfig.botMessage?.backgroundColor || '#f7f8ff',
+                            color: message.type === 'user'
+                                ? mergedConfig.userMessage?.textColor || '#ffffff'
+                                : mergedConfig.botMessage?.textColor || '#303235',
+                          }}
+                      >
+                        {message.type === 'system' && mergedConfig.botMessage?.showAvatar && (
+                            <img
+                                src={mergedConfig.botMessage?.avatarSrc || 'https://raw.githubusercontent.com/zahidkhawaja/langchain-chat-nextjs/main/public/parroticon.png'}
+                                alt="Bot Avatar"
+                                className="w-6 h-6 rounded-full"
+                            />
+                        )}
+                        <div>
+                          {message.content}
+                          {message.timestamp && (
+                              <div className="text-xs opacity-70 mt-1">
+                                {message.timestamp.toLocaleTimeString()}
+                              </div>
+                          )}
+                        </div>
+                        {message.type === 'user' && mergedConfig.userMessage?.showAvatar && (
+                            <img
+                                src={mergedConfig.userMessage?.avatarSrc || 'https://raw.githubusercontent.com/zahidkhawaja/langchain-chat-nextjs/main/public/usericon.png'}
+                                alt="User Avatar"
+                                className="w-6 h-6 rounded-full"
+                            />
+                        )}
+                      </div>
+                  ))}
+                  {isLoading && (
+                      <div
+                          className="p-3 rounded-lg max-w-[80%]"
+                          style={{
+                            backgroundColor: mergedConfig.botMessage?.backgroundColor || '#f7f8ff',
+                            color: mergedConfig.botMessage?.textColor || '#303235',
+                          }}
+                      >
+                        Thinking...
+                      </div>
+                  )}
+                  {error && (
+                      <div className="p-3 rounded-lg max-w-[80%] bg-red-100 text-red-700">
+                        {error}
+                      </div>
+                  )}
+                </div>
+              </ScrollArea.Viewport>
+              <ScrollArea.Scrollbar orientation="vertical" className="w-2 bg-gray-200">
+                <ScrollArea.Thumb className="bg-gray-400 rounded-full" />
+              </ScrollArea.Scrollbar>
+              <ScrollArea.Corner />
+            </ScrollArea.Root>
+            <div className="p-4 border-t">
+              {renderInputField()}
+            </div>
+            {mergedConfig.footer?.text && (
+                <div
+                    className="p-2 text-center text-sm border-t"
+                    style={{ color: mergedConfig.footer?.textColor }}
+                >
+                  {mergedConfig.footer?.text}{' '}
+                  <a
+                      href={mergedConfig.footer?.companyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold hover:underline"
+                  >
+                    {mergedConfig.footer?.company}
+                  </a>
+                </div>
+            )}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
   );
-}; 
+};
