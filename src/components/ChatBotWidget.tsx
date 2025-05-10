@@ -253,6 +253,15 @@ export const ChatBotWidget = (props: ChatBotWidgetProps) => {
         }]);
 
         try {
+            console.log('Continue Chat', JSON.stringify({
+                workflowid,
+                sessionId,
+                currentNodeId,
+                token,
+                chatSessionId,
+                chatToken,
+                userInput,
+            }));
             const response = await fetch(`${apiUrl}/api/v1/continue-chat/${workflowid}`, {
                 method: 'POST',
                 headers: {

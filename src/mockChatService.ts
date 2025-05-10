@@ -50,7 +50,6 @@ export class MockChatService {
     userInput: string
   ): Promise<NodeResponse> {
     const session = this.chatSessions.get(chatSessionId);
-    
     if (!session) {
       throw new Error('Chat session not found');
     }
@@ -226,6 +225,7 @@ export class MockChatService {
       content: userInput,
       timestamp: new Date()
     });
+    console.log('response', response);
 
     return Promise.resolve(response);
   }
